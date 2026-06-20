@@ -14,7 +14,7 @@ def createhash(password:str):
 def verifyhash(plainpassword:str, hashedpassword:str):
     return hashcontext.verify(plainpassword,hashedpassword)
 
-def register_user( request:RegisterRequest,db:Session,):
+def register_user(request:RegisterRequest,db:Session,):
     if get_user_by_username(request.username, db):
        raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail="username already exists")
 

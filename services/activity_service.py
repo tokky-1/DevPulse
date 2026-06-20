@@ -1,9 +1,10 @@
 from sqlalchemy.orm import Session 
 import httpx
-from fastapi import  HTTPException,status
-from repositories.activity_repository import save_activity
+from fastapi import HTTPException,status
+from datetime import timedelta, date
+from repositories.activity_repository import save_activity,get_activity_summary,get_active_dates
 
-async def  sync_github_activity(github_username: str, user_id: int, db: Session):
+async def sync_github_activity(github_username: str, user_id: int, db: Session):
     url = f"https://api.github.com/users/{github_username}/events"
     headers = {
         "Accept": "application/vnd.github+json",
@@ -46,3 +47,31 @@ async def  sync_github_activity(github_username: str, user_id: int, db: Session)
             )        
             saved_count += 1
         return saved_count
+    
+def get_user_activity_summary(user_id: int, db: Session):
+    return  get_activity_summary(user_id, db)
+    
+def get_user_commit_streak(user_id: int, db: Session):
+    active_dates = get_active_dates(user_id,db)
+    if not active_dates:
+        return {"streak": 0}
+    unique_dates = sorted({d[0] for d in active_dates}, reverse=True)
+    
+    today = date.today()
+    yesterday = today - timedelta(days=1)
+    
+    # If the latest commit isn't today or yesterday, the current streak is broken (0)
+    if unique_dates[0] < yesterday:
+        return {"streak": 0 }
+    
+    streak_count = 0
+    current_check_date = unique_dates[0] # Start checking from the most recent commit
+    
+    # 2. calculate the streak
+    for commit_date in unique_dates:
+        if commit_date == current_check_date:
+            streak_count += 1
+            current_check_date -= timedelta(days=1)
+        else:            
+            break
+    return {"streak": streak_count}

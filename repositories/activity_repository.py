@@ -37,3 +37,8 @@ def get_activity_summary(user_id: int, db: Session):
     "total_repos": total_repos,
     "top_language": top_language
         }
+
+def get_active_dates(user_id:int, db:Session):
+    active_dates = db.query(GitHubActivity.activity_date).distinct().filter(GitHubActivity.user_id == user_id).order_by(GitHubActivity.activity_date.asc()).all()
+    return active_dates
+

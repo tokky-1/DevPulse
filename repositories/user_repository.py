@@ -14,3 +14,5 @@ def create_user(username, email, github_username, hashed_password,db:Session ):
 def get_user_by_username(username,db:Session):
    return db.query(User).filter(User.username == username).first()
    
+def get_all_user(db:Session):
+    return db.query(User).all()
