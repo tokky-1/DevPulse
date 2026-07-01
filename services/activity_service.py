@@ -1,16 +1,24 @@
 from sqlalchemy.orm import Session 
 import httpx
-from fastapi import HTTPException,status
 from datetime import timedelta, date
 from repositories.activity_repository import save_activity,get_activity_summary,get_active_dates
+from error.exception import GitHubAPIException
+import logging
+from core.config import settings
+
+
+logger = logging.getLogger(__name__)
 
 async def sync_github_activity(github_username: str, user_id: int, db: Session):
     url = f"https://api.github.com/users/{github_username}/events"
     headers = {
-        "Accept": "application/vnd.github+json",
-        "User-Agent": "FastAPI-GitHub-Syncer"  # GitHub requires a User-Agent header
-    }
-    
+    "Accept": "application/vnd.github+json",
+    "User-Agent": "FastAPI-GitHub-Syncer",
+    "Authorization": f"Bearer {settings.GITHUB_TOKEN}",
+    "X-GitHub-Api-Version": "2022-11-28"
+}
+    logger.info("fetching github activity",extra={"user_id": user_id, "username": github_username})
+
     saved_count = 0
     async with httpx.AsyncClient() as client:
         try:
@@ -18,9 +26,9 @@ async def sync_github_activity(github_username: str, user_id: int, db: Session):
             response.raise_for_status()
             events = response.json()
         except httpx.HTTPError as e:
-            # Handle potential API errors gracefully (or log them depending on your setup)
-            raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY)
-
+            logger.error("github activity failed" ,extra={"user_id": user_id, "username": github_username})
+            raise GitHubAPIException(f"GitHub API request failed: {str(e)}")
+        
         for event in events:
             if event.get("type") != "PushEvent":
                 continue
@@ -32,20 +40,20 @@ async def sync_github_activity(github_username: str, user_id: int, db: Session):
             
         
             created_at_str = event.get("created_at", "")
-            activity_date = None
-            if created_at_str:
-                activity_date = created_at_str.split("T")[0]
-
-            
+           
+            activity_date = created_at_str.split("T")[0]
+            formatted_activity_date = date.fromisoformat(activity_date)
             save_activity(
                 db=db,
                 user_id=user_id,
                 repo_name=repo_name,
                 num_commits=num_commits,
-                activity_date=activity_date,
+                activity_date=formatted_activity_date,
                 language=None
             )        
             saved_count += 1
+            
+        logger.info("github activity synced" ,extra={"user_id": user_id, "username": github_username,"saved_count": saved_count})
         return saved_count
     
 def get_user_activity_summary(user_id: int, db: Session):
