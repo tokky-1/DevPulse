@@ -1,15 +1,16 @@
 import os
 import sys
 
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config,pool,create_engine
 from alembic import context
-from dotenv import load_dotenv
+
 from database.connect import Base
 from models import user, github_activity  # forces models to register with Base
-load_dotenv()
+from core.config import get_settings
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -33,10 +34,7 @@ target_metadata = Base.metadata
 
 
 def get_url():
-    url = os.getenv("DB_URL")
-    if not url:
-        raise ValueError("DB_URL environment variable is not set")
-    return url
+    return get_settings().DB_URL
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.

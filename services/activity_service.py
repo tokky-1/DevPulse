@@ -2,9 +2,10 @@ from sqlalchemy.orm import Session
 import httpx
 from datetime import timedelta, date
 from repositories.activity_repository import save_activity,get_activity_summary,get_active_dates
-from error.exception import GitHubAPIException
+from error.exception import GitHubAPIException,UserNotFoundException
 import logging
 from core.config import settings
+from repositories.user_repository import get_user_by_id
 
 
 logger = logging.getLogger(__name__)
@@ -55,7 +56,13 @@ async def sync_github_activity(github_username: str, user_id: int, db: Session):
             
         logger.info("github activity synced" ,extra={"user_id": user_id, "username": github_username,"saved_count": saved_count})
         return saved_count
-    
+
+async def sync_github_activity_for_user(user_id: int, db: Session):
+    user = get_user_by_id(user_id, db)
+    if user is None:
+        raise UserNotFoundException(f"User with id {user_id} not found")
+    return await sync_github_activity(user.github_username, user_id, db)
+
 def get_user_activity_summary(user_id: int, db: Session):
     return  get_activity_summary(user_id, db)
     

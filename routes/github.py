@@ -1,6 +1,6 @@
 from fastapi import APIRouter,Depends
 from sqlalchemy.orm import Session 
-from services.activity_service import sync_github_activity,get_activity_summary,get_user_activity_summary,get_user_commit_streak
+from services.activity_service import get_user_activity_summary,get_user_commit_streak,sync_github_activity_for_user
 from database.connect import get_db
 from dependencies import get_current_user
 from schemas.activity import SummaryResponse,StreakResponse
@@ -15,8 +15,8 @@ activity_router = APIRouter(prefix="/Github")
         "calculates the number of commits per push, and persists this activity data into the database "
         "for the authenticated user."
     ))
-async def get_activity(github_username:str,current_user:int = Depends(get_current_user),db:Session = Depends(get_db)):
-    return await sync_github_activity(github_username,current_user,db)
+async def get_activity(current_user:int = Depends(get_current_user),db:Session = Depends(get_db)):
+    return await sync_github_activity_for_user(current_user,db)
 
  
 @activity_router.get("/summary",

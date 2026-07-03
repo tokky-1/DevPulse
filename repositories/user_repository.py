@@ -16,3 +16,6 @@ def get_user_by_username(username,db:Session):
    
 def get_all_user(db:Session):
     return db.query(User).all()
+
+def get_user_by_id(user_id, db:Session):
+    return db.query(User).filter(User.id == user_id).first()

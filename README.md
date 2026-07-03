@@ -73,7 +73,7 @@ Notes:
 
 - DB_URL should point to your PostgreSQL instance.
 - SECRET_KEY should be a strong random value.
-- GITHUB_TOKEN is included in settings and can be used for future authenticated GitHub integrations.
+- GITHUB_TOKEN is used to authenticate GitHub API requests, increasing your rate limit from 60 to 5,000 requests/hour.
 
 ## Quick start
 
@@ -93,24 +93,18 @@ The API will be available at:
 ### Option 2: Run locally with Python
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -e .
+uv sync
+uv run python -m uvicorn main:app --reload --port 8000
 ```
 
 If you are using Windows PowerShell:
 
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -e .
+uv sync
+uv run python -m uvicorn main:app --reload --port 8000
 ```
 
-Start the app:
 
-```bash
-uvicorn main:app --reload
-```
 
 ## Database migrations
 
@@ -169,7 +163,7 @@ curl -X POST "http://localhost:8000/Github/request_activity?github_username=octo
 Run the test suite with:
 
 ```bash
-pytest
+uv run pytest test/ -v
 ```
 
 ## Notes
