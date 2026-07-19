@@ -10,7 +10,9 @@ FROM python:3.12-slim
 
 WORKDIR /app
 COPY --from=builder /install /usr/local/lib/python3.12/site-packages
-COPY . .
+RUN groupadd -r appgroup && useradd -r -g appgroup appuser
+COPY --chown=appuser:appgroup . .
 
+USER appuser 
 EXPOSE 8000
 CMD ["python","-m","uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
